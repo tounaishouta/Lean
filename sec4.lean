@@ -48,7 +48,7 @@ variables (A : Type) (p q : A → Prop)
 variable r : Prop
 
 example : A → ((∀ x : A, r) ↔ r) :=
-take a,
+take a : A,
 iff.intro (
   assume H : ∀ x : A, r,
   show r, from H a
@@ -105,7 +105,6 @@ iff.intro (
 
 end sec4_1_2
 
-
 section sec4_1_3
 
 variables (men : Type) (barber : men) (shaves : men → men → Prop)
@@ -128,7 +127,7 @@ absurd (H barber) (Lem1 (shaves barber barber))
 
 end sec4_1_3
 
-section sec4_1_4
+section sec4_3
 
 open nat algebra
 
@@ -143,9 +142,9 @@ calc
   ...               = x * x + y * x + (x * y + y * y) : right_distrib
   ...               = x * x + y * x + x * y + y * y   : add.assoc
 
-end sec4_1_4
+end sec4_3
 
-section sec4_1_5
+section sec4_5
 
 open classical
 
@@ -363,4 +362,4 @@ iff.intro (
   )
 )
 
-end sec4_1_5
+end sec4_5

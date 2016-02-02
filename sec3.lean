@@ -1,3 +1,43 @@
+print "\n Prop in Lean \n"
+
+check Prop
+check Type.{0} -- same as above
+
+theorem HilbertS {P Q R : Prop}
+: (P → Q → R) → (P → Q) → P → R
+:=
+assume g,
+assume f,
+assume x,
+show R, from g x (f x)
+
+check HilbertS
+
+check fun (A : Type) (a b : A), a = b
+
+
+constant A : Prop
+
+theorem p1 : A → A → A :=
+assume Ha1 : A,
+assume Ha2 : A,
+show A, from Ha1
+
+theorem p2 : A → A → A :=
+assume Ha1 : A,
+assume Ha2 : A,
+show A, from Ha2
+
+check p1
+check p2
+
+example : p1 = p2 := rfl
+-- p1 と p2 は別の証明だが等号を示せる。
+
+-- ここまで初回の内容
+
+section sec3_6
+
 open classical
 
 variables p q r s : Prop
@@ -346,3 +386,5 @@ show p, from by_cases (
   ),
   H Hpq
 )
+
+end sec3_6
