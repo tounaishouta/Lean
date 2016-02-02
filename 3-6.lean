@@ -163,7 +163,7 @@ iff.intro (
 
 example : ¬p ∨ ¬q → ¬(p ∧ q) :=
 assume H : ¬p ∨ ¬q,
-show ¬(p ∧ q), from not.intro ( 
+show ¬(p ∧ q), from not.intro (
   assume Hpq : p ∧ q,
   have Hp : p, from and.left Hpq,
   have Hq : q, from and.right Hpq,
@@ -192,7 +192,7 @@ show ¬(p → q), from not.intro (
   assume Hpq : p → q,
   absurd (Hpq Hp) Hnq
 )
-  
+
 example : ¬p → (p → q) :=
 assume Hnp : ¬p,
 assume Hp : p,
@@ -236,7 +236,7 @@ iff.intro (
 example : ¬(p ↔ ¬p) :=
 not.intro (
   assume H : p ↔ ¬p,
-  have Hnp : ¬p, from not.intro (       
+  have Hnp : ¬p, from not.intro (
     assume Hp : p,
     absurd Hp (iff.mp H Hp)
   ),
@@ -270,7 +270,7 @@ show (p → r) ∨ (p → s), from by_cases (
     ) (
       assume Hs : s,
       Hs
-    )   
+    )
   )
 )
 
@@ -287,7 +287,7 @@ show ¬p ∨ ¬q, from by_cases (
   assume Hnp : ¬p,
   or.inl Hnp
 )
-    
+
 example : ¬(p → q) → p ∧ ¬q :=
 assume H : ¬(p → q),
 and.intro (

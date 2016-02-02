@@ -124,7 +124,7 @@ constant vec : Type → ℕ → Type
 
 namespace vec
 constant nil : Π {X : Type}, vec X 0
-constant cons : Π {X : Type} {n : ℕ}, X → vec X n → vec X (n + 1)    
+constant cons : Π {X : Type} {n : ℕ}, X → vec X n → vec X (n + 1)
 constant append : Π {X : Type} {n m : ℕ}, vec X n → vec X m → vec X (n + m)
 
 open bool
