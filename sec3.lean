@@ -36,6 +36,35 @@ example : p1 = p2 := rfl
 
 -- ここまで初回の内容
 
+section sec3_5
+
+-- em (排中律) と dne (二重否定の除去) の同値性を示す。
+
+example (em : ∀ p : Prop, p ∨ ¬p) : ∀ p : Prop, ¬¬p → p :=
+take p : Prop,
+assume Hnnp : ¬¬p,
+show p, from or.elim (em p) (
+  assume Hp : p,
+  Hp
+) (
+  assume Hnp : ¬p,
+  absurd Hnp Hnnp
+)
+
+example (dne : ∀ p : Prop, ¬¬p → p) : ∀ p : Prop, p ∨ ¬p :=
+take p : Prop,
+have Hnn : ¬¬(p ∨ ¬p), from not.intro (
+  assume Hn : ¬(p ∨ ¬p),
+  have Hnp : ¬p, from not.intro (
+    assume Hp : p,
+    absurd (or.inl Hp) Hn
+  ),
+  absurd (or.inr Hnp) Hn
+),
+show p ∨ ¬p, from dne _ Hnn
+
+end sec3_5
+
 section sec3_6
 
 open classical
