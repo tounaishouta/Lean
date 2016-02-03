@@ -142,6 +142,37 @@ calc
   ...               = x * x + y * x + (x * y + y * y) : right_distrib
   ...               = x * x + y * x + x * y + y * y   : add.assoc
 
+open int
+
+-- find_decl (_ - _) * _ = _ * _ - _ * _
+-- check @mul_sub_right_distrib
+
+-- find_decl _ - (_ + _) = _ - _ - _
+-- check @sub_add_eq_sub_sub
+
+-- find_decl _ * _ = _ * _, + comm
+-- check @mul.comm
+
+-- find_decl _ + _ - _ = _ + (_ - _)
+-- check @add_sub_assoc
+
+-- find_decl _ - _ = 0
+-- check @sub_self
+
+-- find_decl _ + 0 = _
+-- check @add_zero
+
+example (x y : ℤ) : (x - y) * (x + y) = x * x - y * y :=
+calc
+  (x - y) * (x + y) = x * (x + y) - y * (x + y)       : mul_sub_right_distrib
+  ...               = x * x + x * y - y * (x + y)     : left_distrib
+  ...               = x * x + x * y - (y * x + y * y) : left_distrib
+  ...               = x * x + x * y - y * x - y * y   : sub_add_eq_sub_sub
+  ...               = x * x + x * y - x * y - y * y   : mul.comm
+  ...               = x * x + (x * y - x * y) - y * y : add_sub_assoc
+  ...               = x * x + 0 - y * y               : sub_self
+  ...               = x * x - y * y                   : add_zero
+
 end sec4_3
 
 section sec4_5
