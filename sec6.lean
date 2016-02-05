@@ -1,37 +1,24 @@
 import standard
 
-section sec6_1
+namespace sec6_1
 
 inductive weekday : Type :=
-| sunday
-| monday
-| tuesday
-| wednesday
-| thursday
-| friday
-| saturday
+| sunday    : weekday
+| monday    : weekday
+| tuesday   : weekday
+| wednesday : weekday
+| thursday  : weekday
+| friday    : weekday
+| saturday  : weekday
 
-print weekday
-print prefix weekday
+open weekday
 
-inductive shingichi : Type :=
-| shin
-| gi
+definition next_day : weekday → weekday :=
+weekday.rec monday tuesday wednesday thursday friday saturday sunday
 
-open shingichi
+definition day_after (n : ℕ) (d : weekday) : weekday :=
+nat.rec_on n d (λ n' d', next_day d')
 
-definition katsu (b1 b2 : shingichi) : shingichi :=
-shingichi.cases_on b1 b2 gi
-
-variables b1 b2 : shingichi
-
-eval katsu b1 b2
-eval katsu shin shin
-eval katsu shin gi
-eval katsu gi shin
-eval katsu gi gi
-eval katsu shin b1
-eval katsu gi b1
-eval katsu b1 gi
+eval day_after 3 monday
 
 end sec6_1
