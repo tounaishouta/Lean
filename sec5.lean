@@ -1,4 +1,5 @@
 import standard
+import data.tuple
 
 /-
 
@@ -312,3 +313,115 @@ nat.olean を参照していたわけです。
 すればOK
 
 -/
+
+/-
+
+5.6 Notation and Abbreviations
+
+-/
+
+namespace sec5_6_1
+
+open nat
+
+infix `@@`:49 := λ x y : ℕ, x * y + 3
+infixr `@@@`:50 := λ x y : ℕ, x + y + 7
+
+print notation @@
+print notation @@@
+
+eval (2 @@ 3) @@@ 4
+eval 2 @@ (3 @@@ 4)
+eval 2 @@ 3 @@@ 4
+
+end sec5_6_1
+
+namespace sec5_6_2
+
+open list tuple nat int
+
+print notation ++
+check (#tuple λ x y, x ++ y)
+check (#list λ x y, x ++ y)
+
+eval 1 - (2 : ℕ)
+eval 1 - (2 : ℤ)
+
+print int
+
+eval (-0 : ℤ)
+
+eval int.neg_succ_of_nat 3
+
+end sec5_6_2
+
+namespace sec5_6_3
+
+open eq
+
+abbreviation double (x : ℕ) : ℕ := x + x
+definition triple (x : ℕ) : ℕ := x + x + x
+
+check double
+check triple
+print double
+print triple
+check double (triple 3)
+
+example : double 3 = triple 2 := calc
+double 3 = 3 + 3     : refl
+...      = 6         : refl
+...      = 2 + 2 + 2 : refl
+...      = triple 2  : refl
+
+
+end sec5_6_3
+
+/-
+
+5.7 Coercions
+
+-/
+
+namespace sec5_7
+
+open bool int nat
+
+variable n : ℕ
+variable a : ℤ
+
+check n + a
+
+set_option pp.coercions true
+
+check n + a
+
+set_option pp.coercions false
+
+check n + a
+
+check @bool.cond
+
+definition bool.to_int4 [coercion] (b : bool) : int :=
+  bool.cond b (-1) (-2)
+
+definition bool.to_nat2 [coercion] (b : bool) : nat :=
+  bool.cond b 0 1
+
+definition bool.to_nat3 [coercion] (b : bool) : nat :=
+  bool.cond b 2 3
+
+set_option pp.coercions true
+
+print bool.to.int
+print bool.to.int_1
+print bool.to.int_2
+
+check 2 + tt
+eval 2 + ff
+check (2 : ℤ) + tt
+eval (2 : ℤ) + tt
+check (2 : ℤ) + (tt : ℕ)
+eval (2 : ℤ) + (tt : ℕ)
+
+end sec5_7
