@@ -161,6 +161,12 @@ C-x 2   : 上下に分割
 C-x 3   : 左右に分割
 C-x o   : ウィンドウを移動
 C-y     : ペースト (yank)
+C-n     : 下 (next)
+C-p     : 上 (previous)
+C-f     : 右 (forward)
+C-b     : 左 (backward)
+C-a     : 行頭へ (?)
+C-e     : 行末へ (end)
 
 C-c ... : Lean 関係
 
@@ -197,15 +203,20 @@ show _, from H Hp
 -/
 example (p q r : Prop) : (p → r) ∧ (q → r) ↔ (p ∨ q → r) :=
 iff.intro (
-  assume H : _,
+  suppose (p → r) ∧ (q → r),
+  have Hpr : p → r, from and.left this,
+  have Hqr : q → r, from and.right this,
   assume Hpq : p ∨ q,
-  show _, from or.elim Hpq (
-    sorry
-  ) (
-    sorry
-  )
+  show r, from or.elim Hpq Hpr Hqr
 ) (
-  sorry
+  assume H : p ∨ q → r,
+  and.intro (
+    assume Hp : p,
+    show r, from H (or.inl Hp)
+  ) (
+    assume Hq : q,
+    show r, from H (or.inr Hq)
+  )
 )
 /-
 
@@ -320,62 +331,20 @@ nat.olean を参照していたわけです。
 
 -/
 
-namespace sec5_6_1
+namespace sec5_6
 
 open nat
 
-infix `@@`:49 := λ x y : ℕ, x * y + 3
-infixr `@@@`:50 := λ x y : ℕ, x + y + 7
+notation `[` a `**` b `]` := a * b + (1 : ℕ)
+infix `<*>`:50 := λ x y : ℕ, x * x * y * y
 
-print notation @@
-print notation @@@
+print notation [
+print notation <*>
 
-eval (2 @@ 3) @@@ 4
-eval 2 @@ (3 @@@ 4)
-eval 2 @@ 3 @@@ 4
+eval [2 ** 3]
+eval 2 <*> 3
 
-end sec5_6_1
-
-namespace sec5_6_2
-
-open list tuple nat int
-
-print notation ++
-check (#tuple λ x y, x ++ y)
-check (#list λ x y, x ++ y)
-
-eval 1 - (2 : ℕ)
-eval 1 - (2 : ℤ)
-
-print int
-
-eval (-0 : ℤ)
-
-eval int.neg_succ_of_nat 3
-
-end sec5_6_2
-
-namespace sec5_6_3
-
-open eq
-
-abbreviation double (x : ℕ) : ℕ := x + x
-definition triple (x : ℕ) : ℕ := x + x + x
-
-check double
-check triple
-print double
-print triple
-check double (triple 3)
-
-example : double 3 = triple 2 := calc
-double 3 = 3 + 3     : refl
-...      = 6         : refl
-...      = 2 + 2 + 2 : refl
-...      = triple 2  : refl
-
-
-end sec5_6_3
+end sec5_6
 
 /-
 
@@ -385,43 +354,21 @@ end sec5_6_3
 
 namespace sec5_7
 
-open bool int nat
+open bool nat int
 
-variable n : ℕ
-variable a : ℤ
+print coercions
 
-check n + a
+definition hogehoge [coercion] (b : bool) : ℕ :=
+bool.rec_on b 0 1
 
-set_option pp.coercions true
-
-check n + a
-
-set_option pp.coercions false
-
-check n + a
-
-check @bool.cond
-
-definition bool.to_int4 [coercion] (b : bool) : int :=
-  bool.cond b (-1) (-2)
-
-definition bool.to_nat2 [coercion] (b : bool) : nat :=
-  bool.cond b 0 1
-
-definition bool.to_nat3 [coercion] (b : bool) : nat :=
-  bool.cond b 2 3
+print prefix bool
 
 set_option pp.coercions true
 
-print bool.to.int
-print bool.to.int_1
-print bool.to.int_2
+print coercions
+print sec5_7._trans_of_hogehoge
 
-check 2 + tt
-eval 2 + ff
-check (2 : ℤ) + tt
+eval 2 + tt
 eval (2 : ℤ) + tt
-check (2 : ℤ) + (tt : ℕ)
-eval (2 : ℤ) + (tt : ℕ)
 
 end sec5_7
