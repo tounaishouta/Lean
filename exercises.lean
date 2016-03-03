@@ -1,5 +1,17 @@
 import standard
 
+namespace sec_2_4
+
+open prod
+
+definition curry {A B C : Type} (f : A × B → C) : A → B → C :=
+  λ a : A, λ b : B, f (a, b)
+
+definition uncurry {A B C : Type} (f : A → B → C) : A × B → C :=
+  λ p : A × B, f (pr₁ p) (pr₂ p)
+
+end sec_2_4
+
 namespace sec_3_5
 
 open function
@@ -60,7 +72,7 @@ example : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) :=
                (suppose r, or.inr (and.intro `p` `r`))))
     (or.rec (and.rec (suppose p, suppose q, and.intro `p` (or.inl `q`)))
             (and.rec (suppose p, suppose r, and.intro `p` (or.inr `r`))))
-  
+
 example : (p → q → r) ↔ (p ∧ q → r) :=
   iff.intro
     and.rec
@@ -172,5 +184,219 @@ example : ((p → q) → p) → p :=
     (suppose ¬p,
       have p → q, from not.elim `¬p`,
       absurd (H `p → q`) `¬p`)
-  
+
 end sec_3_6
+
+namespace sec_4_1
+
+open classical
+
+variables (A : Type) (p q : A → Prop) (r : Prop)
+
+example : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
+  iff.intro
+    (assume H,
+      and.intro
+        (take x, and.left (H x))
+        (take x, and.right (H x)))
+    (and.rec
+      (assume Hp Hq,
+        take x, and.intro (Hp x) (Hq x)))
+
+example : (∀ x, p x → q x) → (∀ x, p x) → (∀ x, q x) :=
+  assume H,
+  assume Hp,
+  take x,
+  H x (Hp x)
+
+example : (∀ x, p x) ∨ (∀ x, q x) → ∀ x, p x ∨ q x :=
+  or.rec
+    (assume H, take x, or.inl (H x))
+    (assume H, take x, or.inr (H x))
+
+example : A → ((∀ x : A, r) ↔ r) :=
+  take a,
+  iff.intro
+    (assume H, H a)
+    (suppose r, take x, `r`)
+example : (∀ x, p x ∨ r) ↔ (∀ x, p x) ∨ r :=
+  iff.intro
+    (assume H,
+      or.elim (em r)
+        or.inr
+        (suppose ¬r,
+          or.inl
+            (take x,
+              or.elim (H x)
+                id
+                (not.elim `¬r`))))
+    (or.rec
+      (assume H, take x, or.inl (H x))
+      (suppose r, take x, or.inr `r`))
+
+example : (∀ x, r → p x) ↔ (r → ∀ x, p x) :=
+  iff.intro
+    (assume H, suppose r, take x, H x `r`)
+    (assume H, take x, suppose r, H `r` x)
+
+variables (men : Type) (barber : men) (shaves : men → men → Prop)
+
+example (H : ∀ x : men, shaves barber x ↔ ¬(shaves x x)) : false :=
+  have lem : ∀ {P : Prop}, (P ↔ ¬P) → false, from
+    take P,
+    assume H,
+    have ¬P, from
+      not.intro
+        (suppose P,
+          not.elim (iff.mp H `P`) `P`),
+    not.elim `¬P` (iff.mpr H `¬P`),
+  lem (H barber)
+
+end sec_4_1
+
+namespace sec_4_5
+
+open function
+open classical
+
+variables (A : Type) (p q : A → Prop) (a : A) (r : Prop)
+
+example : (∃ x : A, r) → r :=
+  Exists.rec (take x, suppose r, `r`)
+
+example : r → (∃ x : A, r) :=
+  Exists.intro a
+
+example : (∃ x, p x ∧ r) ↔ (∃ x, p x) ∧ r :=
+  iff.intro
+    (Exists.rec
+      (take x,
+        (and.rec
+          (suppose p x,
+            suppose r,
+              and.intro
+                (Exists.intro x `p x`)
+                `r`))))
+    (and.rec
+      (Exists.rec
+        (take x,
+          suppose p x,
+          suppose r,
+          Exists.intro x (and.intro `p x` `r`))))
+
+example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
+  iff.intro
+    (Exists.rec
+      (take x,
+        or.rec
+          (or.inl ∘ Exists.intro x)
+          (or.inr ∘ Exists.intro x)))
+    (or.rec
+      (Exists.rec (take x, Exists.intro x ∘ or.inl))
+      (Exists.rec (take x, Exists.intro x ∘ or.inr)))
+
+-- use classical for ←
+example : (∀ x, p x) ↔ (¬ ∃ x, ¬ p x) :=
+  iff.intro
+    (assume H,
+      not.intro
+        (Exists.rec
+          (take x, absurd (H x))))
+    (assume H,
+      take x,
+      by_contradiction
+        (not.elim H ∘ Exists.intro x))
+
+-- use classical fro ←
+example : (∃ x, p x) ↔ (¬ ∀ x, ¬ p x) :=
+  iff.intro
+    (Exists.rec
+      (take x,
+        suppose p x,
+        not.intro (assume H, not.elim (H x) `p x`)))
+    (assume H : ¬ ∀ x, ¬ p x,
+      by_contradiction
+        (assume G : ¬ ∃ x, p x,
+          have K : ∀ x, ¬ p x, from
+            take x, not.intro (not.elim G ∘ Exists.intro x),
+          not.elim H K))
+
+example : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) :=
+  iff.intro
+    (assume H : ¬ ∃ x, p x,
+      take x,
+      not.intro (not.elim H ∘ Exists.intro x))
+    (assume H : ∀ x, ¬ p x,
+      not.intro
+        (Exists.rec
+          (take x,
+            suppose p x,
+              not.elim (H x) `p x`)))
+
+-- use classical for →
+example : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
+  iff.intro
+    (assume H : ¬ ∀ x, p x,
+      by_contradiction
+        (assume G : ¬ ∃ x, ¬ p x,
+          have K : ∀ x, p x, from
+            take x,
+              by_contradiction (not.elim G ∘ Exists.intro x),
+          not.elim H K))
+    (Exists.rec
+      (take x,
+        suppose ¬ p x,
+        not.intro
+          (assume H : ∀ x, p x,
+            not.elim `¬ p x` (H x))))
+
+example : (∀ x, p x → r) ↔ (∃ x, p x) → r :=
+  iff.intro
+    Exists.rec
+    (assume H : (∃ x, p x) → r,
+      take x,
+      H ∘ Exists.intro x)
+
+-- use classical and (a : A)
+example : (∃ x, p x → r) ↔ (∀ x, p x) → r :=
+  iff.intro
+    (Exists.rec
+      take x,
+      assume H : p x → r,
+      assume G : ∀ x, p x,
+      H (G x))
+    (assume H : (∀ x, p x) → r,
+      or.elim (em (∃ x, ¬ p x))
+        (Exists.rec
+          (take x,
+            suppose ¬ p x,
+            Exists.intro x
+              (suppose p x,
+                not.elim `¬ p x` `p x`)))
+        (assume G : ¬ ∃ x, ¬ p x,
+          have K : ∀ x, p x, from
+            take x,
+            by_contradiction
+              (not.elim G ∘ Exists.intro x),
+          have r, from H K,
+          Exists.intro a (suppose p a, `r`)))
+
+-- use classical and (a : A)
+example : (∃ x, r → p x) ↔ (r → ∃ x, p x) :=
+  iff.intro
+    (Exists.rec
+      (take x,
+        assume H : r → p x,
+        Exists.intro x ∘ H))
+    (assume H : r → ∃ x, p x,
+      or.elim (em r)
+        (suppose r,
+          exists.elim (H `r`)
+            (take x,
+              suppose p x,
+              exists.intro x (suppose r, `p x`)))
+        (suppose ¬ r,
+          exists.intro a
+            (not.elim `¬ r`)))
+
+end sec_4_5
