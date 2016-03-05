@@ -400,3 +400,216 @@ example : (∃ x, r → p x) ↔ (r → ∃ x, p x) :=
             (not.elim `¬ r`)))
 
 end sec_4_5
+
+namespace sec_6_4
+
+open function
+open eq
+
+inductive nat : Type :=
+| zero : nat
+|  succ : nat → nat
+
+namespace nat
+
+definition add (n : nat) : nat → nat :=
+  nat.rec
+    n
+    (λ m add_n_m, succ add_n_m)
+
+notation 0 := zero
+infix `+` := add
+
+theorem add_zero (n : nat) : n + 0 = n := rfl
+
+theorem add_succ (n m : nat) : n + succ m = succ (n + m) := rfl
+
+theorem add_assoc (n m : nat) : ∀ k : nat, (n + m) + k = n + (m + k) :=
+  nat.rec
+    rfl
+    (take k,
+      assume IH : (n + m) + k = n + (m + k),
+      calc (n + m) + succ k
+           = succ ((n + m) + k) : add_succ ...
+           = succ (n + (m + k)) : IH       ...
+           = n + succ (m + k)   : add_succ ...
+           = n + (m + succ k)   : add_succ)
+
+theorem zero_add : ∀ m : nat, 0 + m = m :=
+  nat.rec
+    rfl
+    (take m,
+      assume IH : 0 + m = m,
+      calc 0 + succ m
+           = succ (0 + m) : add_succ ...
+           = succ m       : IH)
+
+theorem succ_add (n : nat) : ∀ m : nat, succ n + m = succ (n + m) :=
+  nat.rec
+    rfl
+    (take m,
+      assume IH : succ n + m = succ (n + m),
+      calc succ n + succ m
+           = succ (succ n + m)   : add_succ ...
+           = succ (succ (n + m)) : IH       ...
+           = succ (n + succ m)   : add_succ)
+
+theorem add_comm (n : nat) : ∀ m : nat, n + m = m + n :=
+  nat.rec
+    (calc n + 0
+          = n     : add_zero ...
+          = 0 + n : zero_add)
+    (take m,
+      assume IH : n + m = m + n,
+      calc n + succ m
+           = succ (n + m) : add_succ ...
+           = succ (m + n) : IH       ...
+           = succ m + n   : succ_add)
+
+definition mul (n : nat) : nat → nat :=
+  nat.rec
+    0
+    (λ m mul_n_m, mul_n_m + n)
+
+infix `*` := mul
+
+theorem mul_zero (n : nat) : n * 0 = 0 := rfl
+
+theorem mul_succ (n m : nat) : n * (succ m) = n * m + n := rfl
+
+theorem zero_mul : ∀ m : nat, 0 * m = 0 :=
+  nat.rec
+    rfl
+    (take m,
+      assume IH : 0 * m = 0,
+      calc 0 * succ m
+           = 0 * m + 0 : mul_succ ...
+           = 0 * m     : add_zero ...
+           = 0         : IH)
+
+theorem mul_distrib (n m : nat) : ∀ k : nat, n * (m + k) = n * m + n * k :=
+  nat.rec
+    (calc n * (m + 0)
+          = n * m         : add_zero ...
+          = n * m + 0     : add_zero ...
+          = n * m + n * 0 : mul_zero)
+    (take k,
+      assume IH : n * (m + k) = n * m + n * k,
+      calc n * (m + succ k)
+           = n * succ (m + k)     : add_succ  ...
+           = n * (m + k) + n      : mul_succ  ...
+           = (n * m + n * k) + n  : IH        ...
+           = n * m + (n * k + n)  : add_assoc ...
+           = n * m + (n * succ k) : mul_succ)
+
+theorem mul_assoc (n m : nat) : ∀ k : nat, (n * m) * k = n * (m * k) :=
+  nat.rec
+    (calc (n * m) * 0
+          = 0           : mul_zero ...
+          = n * 0       : mul_zero ...
+          = n * (m * 0) : mul_zero)
+    (take k,
+      assume IH : (n * m) * k = n * (m * k),
+      calc (n * m) * succ k
+           = (n * m) * k + n * m : mul_succ    ...
+           = n * (m * k) + n * m : IH          ...
+           = n * (m * k + m)     : mul_distrib ...
+           = n * (m * succ k)    : mul_succ)
+
+theorem succ_mul (n : nat) : ∀ m : nat, succ n * m = n * m + m :=
+  nat.rec
+    (calc succ n * 0
+          = 0         : mul_zero ...
+          = 0 + 0     : add_zero ...
+          = n * 0 + 0 : mul_zero)
+    (take m,
+      assume IH : succ n * m = n * m + m,
+      calc succ n * succ m
+           = succ n * m + succ n   : mul_succ  ...
+           = (n * m + m) + succ n  : IH        ...
+           = n * m + (m + succ n)  : add_assoc ...
+           = n * m + succ (m + n)  : add_succ  ...
+           = n * m + succ (n + m)  : add_comm  ...
+           = n * m + (n + succ m)  : add_succ  ...
+           = (n * m + n) + succ m  : add_assoc ...
+           = (n * succ m) + succ m : mul_succ)
+
+theorem mul_comm (n : nat) : ∀ m : nat, n * m = m * n :=
+  nat.rec
+    (calc n * 0
+          = 0     : mul_zero ...
+          = 0 * n : zero_mul)
+    (take m,
+      assume IH : n * m = m * n,
+      calc n * succ m
+           = n * m + n  : mul_succ ...
+           = m * n + n  : IH       ...
+           = succ m * n : succ_mul)
+
+definition pred : nat → nat :=
+  nat.rec 0 (λ n pred_n, n)
+
+theorem pred_succ (n : nat) : pred (succ n) = n := rfl
+
+theorem succ_pred : ∀ n : nat, n ≠ 0 → succ (pred n) = n :=
+  nat.rec
+    (suppose 0 ≠ 0,
+      absurd rfl `0 ≠ 0`)
+    (take n,
+      assume IH, -- 使わない
+      assume H, -- 使わない
+      calc succ (pred (succ n)) = succ n : pred_succ)
+
+end nat
+
+end sec_6_4
+
+namespace sec_6_5
+
+inductive list (A : Type) : Type :=
+| nil {} : list A
+| cons   : A → list A → list A
+
+namespace list
+
+variable {A : Type}
+
+notation h :: t := cons h t
+
+definition append (s t : list A) : list A :=
+  list.rec_on s t (λ x s' append_s'_t, x :: append_s'_t)
+
+notation s ++ t := append s t
+
+theorem nil_append (t : list A) : nil ++ t = t := rfl
+
+theorem cons_append (x : A) (s t : list A) : (x :: s) ++ t = x :: (s ++ t) :=
+  rfl
+
+theorem append_nil : ∀ t : list A, t ++ nil = t :=
+  list.rec
+    rfl
+    (take x : A,
+      take xs : list A,
+      assume IH : xs ++ nil = xs,
+      calc (x :: xs) ++ nil
+           = x :: (xs ++ nil) : cons_append ...
+           = x :: xs          : IH)
+  
+theorem append_assoc (r s t : list A) : (r ++ s) ++ t = r ++ (s ++ t) :=
+  list.rec_on r
+    (calc (nil ++ s) ++ t
+          = s ++ t          : nil_append ...
+          = nil ++ (s ++ t) : nil_append)
+    (take x,
+      take r,
+      assume IH : (r ++ s) ++ t = r ++ (s ++ t),
+      calc ((x :: r) ++ s) ++ t
+           = (x :: (r ++ s)) ++ t : cons_append ...
+           = x :: ((r ++ s) ++ t) : cons_append ...
+           = x :: (r ++ (s ++ t)) : IH          ...
+
+           = (x :: r) ++ (s ++ t) : cons_append)
+end list
+
+end sec_6_5
