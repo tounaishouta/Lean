@@ -451,17 +451,99 @@ definition band : bool → bool → bool
 | band tt tt := tt
 | band _  _  := ff
 
+example : band ff ff = ff := rfl
+example : band ff tt = ff := rfl
+example : band tt ff = ff := rfl
+example : band tt ff = ff := rfl
+
 definition bor : bool → bool → bool
 | bor ff ff := ff
 | bor _  _  := tt
+
+example : bor ff ff = ff := rfl
+example : bor ff tt = tt := rfl
+example : bor tt ff = tt := rfl
+example : bor tt tt = tt := rfl
 
 definition bnot : bool → bool
 | bnot ff := tt
 | bnot tt := ff
 
+example : bnot ff = tt := rfl
+example : bnot tt = ff := rfl
+
 end bool
 
 end sec_6_1
+
+namespace sec_6_2
+
+open function
+
+inductive option (A : Type) : Type :=
+| none {} : option A
+| some    : A → option A
+
+namespace option
+
+definition maybe {A B : Type} : B → (A → B) → option A → B
+| maybe b f oa := option.rec_on oa b f
+
+definition bind {A B : Type} : (A → option B) → option A → option B := maybe none
+
+definition return {A : Type} : A → option A := some
+
+definition mcomp {A B C : Type} : (B → option C) → (A → option B) → (A → option C)
+| mcomp g f := λ a : A, bind g (f a)
+
+notation f `=<<` m := bind f m
+notation g `<=<` f := mcomp g f
+
+-- モナド則
+
+example (A B : Type) (f : A → option B) (x : A) : (f =<< return x) = f x := rfl
+
+example (A : Type) (m : option A) : (return =<< m) = m :=
+  match m with
+  | none   := rfl
+  | some a := rfl
+  end
+
+example (A B C : Type) (f : A → option B) (g : B → option C) (m : option A) : ((g <=< f) =<< m) = (g =<< (f =<< m)) :=
+  match m with
+  | none   := rfl
+  | some a := rfl
+  end
+
+definition pfunc (A B : Type) : Type := A → option B
+
+definition pcomp {A B C : Type} : pfunc B C → pfunc A B → pfunc A C := mcomp
+
+variables A B C : Type
+variables (f : pfunc A B) (g : pfunc B C) (a : A) (b : B) (c : C)
+
+example : f a = none → pcomp g f a = none :=
+  assume H : f a = none,
+  calc pcomp g f a = maybe none g (f a) : rfl
+       ...         = maybe none g none  : {H} -- なぜ brace が必要?
+       ...         = none               : rfl
+
+example : f a = some b → pcomp g f a = g b :=
+  assume H : f a = some b,
+  calc pcomp g f a = maybe none g (f a)    : rfl
+       ...         = maybe none g (some b) : {H}
+       ...         = g b                   : rfl
+
+end option
+
+inductive inhabited (A : Type) : Type :=
+| mk : A → inhabited A
+
+example : inhabited bool := inhabited.mk bool.ff
+
+example : inhabited nat := inhabited.mk zero
+
+end sec_6_2
 
 namespace sec_6_4
 
@@ -555,6 +637,17 @@ theorem mul_distrib : ∀ n m k : nat, n * (m + k) = n * m + n * k
        ...              = n * m + (n * k + n) : add_assoc
        ...              = n * m + n * succ k  : mul_succ
 
+theorem mul_assoc : ∀ n m k : nat, (n * m) * k = n * (m * k)
+| mul_assoc n m 0 :=
+  calc (n * m) * 0 = 0           : mul_zero
+       ...         = n * 0       : mul_zero
+       ...         = n * (m * 0) : mul_zero
+| mul_assoc n m (succ k) :=
+  calc (n * m) * succ k = (n * m) * k + n * m : mul_succ
+       ...              = n * (m * k) + n * m : mul_assoc
+       ...              = n * (m * k + m)     : mul_distrib
+       ...              = n * (m * succ k)    : mul_succ
+
 theorem succ_mul : ∀ n m : nat, succ n * m = n * m + m
 | succ_mul n 0 :=
   calc succ n * 0 = 0         : mul_zero
@@ -593,6 +686,42 @@ theorem succ_pred : ∀ n : nat, n ≠ 0 → succ (pred n) = n
 | succ_pred (succ n) :=
   assume `succ n ≠ 0`, -- 使わない
   calc succ (pred (succ n)) = succ n : pred_succ
+
+definition sub : nat → nat → nat
+| sub n 0        := 0
+| sub n (succ m) := pred (sub n m)
+
+notation 1 := succ zero
+
+definition pow : nat → nat → nat
+| pow n 0        := 1
+| pow n (succ m) := pow n m * n
+
+infix `^` := pow
+
+theorem pow_zero : ∀ n : nat, n ^ 0 = 1
+| pow_zero n := rfl
+
+theorem pow_succ : ∀ n m : nat, n ^ (succ m) = n ^ m * n
+| pow_succ n m := rfl
+
+theorem mul_one : ∀ n : nat, n * 1 = n
+| mul_one n :=
+  calc n * 1 = n * 0 + n : mul_succ
+       ...   = 0 + n     : mul_zero
+       ...   = n         : zero_add
+
+theorem pow_add : ∀ n m k : nat, n ^ (m + k) = n ^ m * n ^ k
+| pow_add n m 0 :=
+  calc n ^ (m + 0) = n ^ m         : add_zero
+       ...         = n ^ m * 1     : mul_one
+       ...         = n ^ m * n ^ 0 : pow_zero
+| pow_add n m (succ k) :=
+  calc n ^ (m + succ k) = n ^ succ (m + k)    : add_succ
+       ...              = n ^ (m + k) * n     : pow_succ
+       ...              = (n ^ m * n ^ k) * n : pow_add
+       ...              = n ^ m * (n ^ k * n) : mul_assoc
+       ...              = n ^ m * n ^ succ k  : pow_succ
 
 end nat
 
