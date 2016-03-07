@@ -757,7 +757,7 @@ theorem append_nil : ∀ t : list A, t ++ nil = t
 | append_nil (x :: xs) :=
   calc (x :: xs) ++ nil = x :: (xs ++ nil) : cons_append
        ...              = x :: xs          : append_nil
-  
+
 theorem append_assoc : ∀ xs ys zs : list A, (xs ++ ys) ++ zs = xs ++ (ys ++ zs)
 | append_assoc nil ys zs :=
   calc (nil ++ ys) ++ zs = ys ++ zs          : nil_append

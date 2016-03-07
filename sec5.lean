@@ -150,7 +150,7 @@ M-a : Alt (Option) を押しながら a,
       あるいは C-[ してから a
 
 例
-C-x C-f : (新しい)ファイルを開く (file, find) (Ctrol を押したまま x f)
+C-x C-f : (新しい)ファイルを開く (file, find) (Ctrl を押したまま x f)
 C-x C-s : 保存 (save)
 C-x C-c : Emacs を終了する (close)
 C-x u   : 元に戻す (undo)
@@ -167,6 +167,7 @@ C-f     : 右 (forward)
 C-b     : 左 (backward)
 C-a     : 行頭へ (?)
 C-e     : 行末へ (end)
+C-/     : undo
 
 C-c ... : Lean 関係
 
@@ -192,33 +193,18 @@ check λ x y : ℕ, x = y
 
 アンダースコアで省略した内容を補完できます。
 C-c C-f : アンダースコアを推論した結果で置換
+
 -/
+
 example (p totemonagainamaenomeidai : Prop) : p → (p → totemonagainamaenomeidai) → totemonagainamaenomeidai :=
 assume Hp : p,
 assume H : _,
 show _, from H Hp
+
 /-
+
 アンダースコアや sorry を上手く使って
 先に証明の骨格を書くのが楽 (?)
--/
-example (p q r : Prop) : (p → r) ∧ (q → r) ↔ (p ∨ q → r) :=
-iff.intro (
-  suppose (p → r) ∧ (q → r),
-  have Hpr : p → r, from and.left this,
-  have Hqr : q → r, from and.right this,
-  assume Hpq : p ∨ q,
-  show r, from or.elim Hpq Hpr Hqr
-) (
-  assume H : p ∨ q → r,
-  and.intro (
-    assume Hp : p,
-    show r, from H (or.inl Hp)
-  ) (
-    assume Hq : q,
-    show r, from H (or.inr Hq)
-  )
-)
-/-
 
 Tab 補完できます! (超絶便利!!!)
 識別子を途中まで入力して tab を押すと、

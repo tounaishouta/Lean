@@ -31,7 +31,7 @@ definition comp {A B C : Type} : (A → B) → (B → C) → (A → C) :=
 
 definition iterate {A : Type} : ℕ → (A → A) → (A → A) :=
   nat.rec (const id) (λ n G f, comp (G f) f)
-  
+
 definition day_after (n : ℕ) : weekday → weekday :=
   iterate n next_day
 
