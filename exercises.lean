@@ -2,6 +2,23 @@ import standard
 
 namespace sec_2_4
 
+open nat
+
+definition double (x : nat) : nat := x + x
+
+definition do_twice (f : nat → nat) (x : nat) : nat := f (f x)
+
+definition quadruple : nat → nat := do_twice double
+
+-- eval quadruple 8
+-- 32
+
+definition Do_Twice : ((nat → nat) → (nat → nat)) → ((nat → nat) → (nat → nat))
+| Do_Twice F f := F (F f)
+
+-- eval Do_Twice do_twice double 2
+-- 32
+
 open prod
 
 definition curry {A B C : Type} : (A × B → C) → (A → B → C)
@@ -255,6 +272,26 @@ example (H : ∀ x : men, shaves barber x ↔ ¬(shaves x x)) : false :=
 
 end sec_4_1
 
+namespace sec_4_3
+
+open nat
+
+-- check nat.left_distrib
+-- check nat.mul_comm
+-- check nat.add_comm
+-- check nat.mul_sub_right_distrib
+-- check nat.add_sub_add_left
+
+example (x y : ℕ) : (x - y) * (x + y) = x * x - y * y :=
+  calc (x - y) * (x + y) = x * (x + y) - y * (x + y)         : nat.mul_sub_right_distrib
+       ...               = (x * x + x * y) - y * (x + y)     : nat.left_distrib
+       ...               = (x * x + x * y) - (y * x + y * y) : nat.left_distrib
+       ...               = (x * x + x * y) - (x * y + y * y) : nat.mul_comm
+       ...               = (x * y + x * x) - (x * y + y * y) : nat.add_comm
+       ...               = x * x - y * y                     : nat.add_sub_add_left
+
+end sec_4_3
+
 namespace sec_4_5
 
 open function
@@ -401,6 +438,30 @@ example : (∃ x, r → p x) ↔ (r → ∃ x, p x) :=
             (not.elim `¬ r`)))
 
 end sec_4_5
+
+namespace sec_6_1
+
+inductive bool : Type :=
+| ff : bool
+| tt : bool
+
+namespace bool
+
+definition band : bool → bool → bool
+| band tt tt := tt
+| band _  _  := ff
+
+definition bor : bool → bool → bool
+| bor ff ff := ff
+| bor _  _  := tt
+
+definition bnot : bool → bool
+| bnot ff := tt
+| bnot tt := ff
+
+end bool
+
+end sec_6_1
 
 namespace sec_6_4
 
