@@ -55,7 +55,7 @@ coercion attribute を付与できるのは次の型を持つ項に対してだ�
    i.e パラメータを持つ型 C からパラメータを持つ型 D へ
        （t_1, ..., t_m は x_1, ..., x_n, y に依存してよい。）
 
-例） C := list, D := set のとき
+例 C := list, D := set のとき
 -/
 
 open list
@@ -70,12 +70,19 @@ definition elem {A : Type} : A → list A → Prop
 definition set_of_list [coercion] : Π A : Type, list A → set A
 | set_of_list A xs := λ y : A, elem y xs
 
+definition contains {A : Type} : list A → A → Prop
+| contains xs y := elem y xs
+
+set_option pp.coercions true
+
+check λ (A : Type) (xs : set A) (y : A), xs y
+
 /-
 
 2. Pi (x_1 : A_1) ... (x_n : A_n) (y: C x_1 ... x_n), Type
    i.e. パラメータを持つ型 C から Type へ
 
-例） C := Semigroup
+例 C := Semigroup
 -/
 
 structure Semigroup :=
@@ -89,14 +96,16 @@ attribute Semigroup.carrier [coercion]
 notation a `*` b := Semigroup.mul _ a b
 
 -- 数学で代数構造などを持った対象 (S, *) と underlying set S を同じ記号で表す感覚
-example (S : Semigroup) (a b c : S) : (a * b) * c = a * (b * c) := !Semigroup.mul_assoc
+example (S : Semigroup) (a b c : S) : (a * b) * c = a * (b * c) :=
+  calc (a * b) * c = a * (b * c) : Semigroup.mul_assoc
 
 /-
 
 3. Pi (x_1 : A_1) ... (x_n : A_n) (y: C x_1 ... x_n), (Pi x : A, B x)
    i.e. パラメータを持つ型 C から関数型へ
+        A, B は x1, ..., x_n, y に依存してよい。
 
-例 C := Semigroup.Hom, D S S' := S → S' (= Semigroup.carrier S → Semigroup.carrier S')
+例 C := Semigroup.morphism, A := S1, B x := S2
 -/
 
 structure morphism (S1 S2 : Semigroup) :=
@@ -107,11 +116,13 @@ check @morphism.mor --> Π (S1 S2 : Semigroup), morphism S1 S2 → S1 → S2
 attribute morphism.mor [coercion]
 
 -- ”写像”が他の構造を持っているが関数として扱える。
-example (S1 S2 : Semigroup) (f : morphism S1 S2) (a b : S1) : f (a * b) = f a * f b := !morphism.resp_mul
+example (S1 S2 : Semigroup) (f : morphism S1 S2) (a b : S1) :
+  f (a * b) = f a * f b :=
+  calc f (a * b) = f a * f b : morphism.resp_mul
 
 /-
-set_option pp.coercions true
-により print されるメッセージに coercion を明示的に表示させることができる。
+pp.coercions オプションにより print されるメッセージに
+coercion を明示的に表示させることができる。
 -/
 
 set_option pp.coercions true
@@ -121,3 +132,4 @@ print morphism --> Semigroup.carrier が挿入されて表示される。
 set_option pp.coercions false
 
 print morphism
+
