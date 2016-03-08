@@ -167,7 +167,7 @@ C-f     : 右 (forward)
 C-b     : 左 (backward)
 C-a     : 行頭へ (?)
 C-e     : 行末へ (end)
-C-/     : undo
+C /     : undo
 
 C-c ... : Lean 関係
 
