@@ -66,7 +66,7 @@ coercion attribute を付与できるのは次の型を持つ項に対してだ�
 2. Pi (x_1 : A_1) ... (x_n : A_n) (y: C x_1 ... x_n), Type
 3. Pi (x_1 : A_1) ... (x_n : A_n) (y: C x_1 ... x_n), (Pi x : A, B x)
 
-個別に見ていこう。 
+個別に見ていこう。
 
 1. Pi (x_1 : A_1) ... (x_n : A_n) (y: C x_1 ... x_n), D t_1 ... t_m
    i.e パラメータを持つ型 C からパラメータを持つ型 D へ
@@ -149,6 +149,7 @@ example (S1 S2 : Semigroup) (f : morphism S1 S2) (a b : S1) :
 
 end coercion3
 /-
+--------------------------------------------------------------------------------
 
 Section 8.2. More on Implicit Argument
 
@@ -207,5 +208,138 @@ check baz
 check qux
 
 end implicit1
+
+namespace implicit2
+
+variables {A : Type} (R : A → A → Prop)
+
+definition reflexive  : Prop := ∀ (a : A), R a a
+definition symmetric  : Prop := ∀ {a b : A}, R a b → R b a
+definition transitive : Prop := ∀ {a b c : A}, R a b → R b c → R a c
+definition euclidean  : Prop := ∀ {a b c : A}, R a b → R a c → R b c
+
+check @reflexive  --> Π {A : Type} (A → A → Prop) → Prop
+check @symmetric  --> Π {A : Type} (A → A → Prop) → Prop
+check @transitive --> Π {A : Type} (A → A → Prop) → Prop
+check @euclidean  --> Π {A : Type} (A → A → Prop) → Prop
+
+variable {R}
+
+theorem th1 (refl : reflexive R) (eucl : euclidean R) : symmetric R :=
+  take a b : A,
+  suppose R a b,
+  have R a a, from !refl,
+  show R b a, from eucl `R a b` `R a a`
+
+check @th1
+-- ∀ {A : Type} {R : A → A → Prop}, reflexive R → euclidean R → symmetric R
+
+theorem th2 (symm : symmetric R) (eucl : euclidean R) : transitive R :=
+  take a b c : A,
+  suppose R a b,
+  suppose R b c,
+  have R b a, from symm `R a b`,
+  show R a c, from eucl `R b a` `R b c`
+
+check @th2
+-- ∀ {A : Type} {R : A → A → Prop}, symmetric R → euclidean R → transitive R
+
+theorem th3 (refl : reflexive R) (eucl : euclidean R) : transitive R :=
+  -- th2 (th1 refl eucl) eucl
+  -- Error!
+/-
+type mismatch at application
+  th1 refl eucl
+term
+  eucl
+has type
+  R ?M_2 ?M_3 → R ?M_2 ?M_4 → R ?M_3 ?M_4
+but is expected to have type
+  euclidean ?M_1
+-/
+  -- @(th2 @(th1 refl @eucl) @eucl)
+  -- あるいは、
+  @th2 _ _ (@th1 _ _ @refl @eucl) @eucl
+
+end implicit2
+/-
+
+implicit argument を持つ関数を引数として渡したときに、
+@eucl _ _ _ のように 展開されてしまい、上手くいかない。
+
+このような問題を解決するのに便利なのが
+weaker implicit argument
+
+⦃ と ⦄ (\{{ \}} で入力) あるいは {{ }}で囲むことで
+weaker implicit argument になる。
+wekar implicit argument を持つ関数 t は、
+関数として使用した（関数適用の左側に来た）ときのみ、
+@t _ の形に展開されるが、
+それ以外のときは @t のまま
+
+先程の例を weaker implicit argument で書き直してみる。
+-/
+
+namespace implicit3
+
+variables {A : Type} (R : A → A → Prop)
+
+definition reflexive  : Prop := ∀ (a : A), R a a
+definition symmetric  : Prop := ∀ ⦃a b : A⦄, R a b → R b a
+definition transitive : Prop := ∀ ⦃a b c : A⦄, R a b → R b c → R a c
+definition euclidean  : Prop := ∀ ⦃a b c : A⦄, R a b → R a c → R b c
+
+check @reflexive  --> Π {A : Type} (A → A → Prop) → Prop
+check @symmetric  --> Π {A : Type} (A → A → Prop) → Prop
+check @transitive --> Π {A : Type} (A → A → Prop) → Prop
+check @euclidean  --> Π {A : Type} (A → A → Prop) → Prop
+
+variable {R}
+
+theorem th1 (refl : reflexive R) (eucl : euclidean R) : symmetric R :=
+  take a b : A,
+  suppose R a b,
+  have R a a, from !refl,
+  show R b a, from eucl `R a b` `R a a`
+
+check @th1
+-- ∀ {A : Type} {R : A → A → Prop}, reflexive R → euclidean R → symmetric R
+
+theorem th2 (symm : symmetric R) (eucl : euclidean R) : transitive R :=
+  take a b c : A,
+  suppose R a b,
+  suppose R b c,
+  have R b a, from symm `R a b`,
+  show R a c, from eucl `R b a` `R b c`
+
+check @th2
+-- ∀ {A : Type} {R : A → A → Prop}, symmetric R → euclidean R → transitive R
+
+theorem th3 (refl : reflexive R) (eucl : euclidean R) : transitive R :=
+  th2 (th1 refl eucl) eucl
+
+end implicit3
+/-
+まとめ（と次回予告）
+
+引数には次の４種類ある。
+
+1. explicit argument (a : A) or a : A
+   明示的に引数を与える必要がある。
+
+2. implicit argument {a : A}
+   @t _ の形に展開される。
+
+3. wekaer implicit argument ⦃a : A⦄ or {{a : A}}
+   関数として使用したときのみ @t _ の形に展開される。
+
+4. Type Class に関するもの [a : A]
+   次の章で扱う。
+
+--------------------------------------------------------------------------------
+
+Section 8.3 Elaboration and Unification
+
+-/
 
 end chapter8
