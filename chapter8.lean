@@ -340,6 +340,165 @@ end implicit3
 
 Section 8.3 Elaboration and Unification
 
+λ x y z, f (x + y) z のような "不完全" な式を受け取り
+implicit な情報を推論する処理を elaboration という？
+
+implicit な情報には
+* 省略された型
+* overload された notation の内どれを採用するか
+  （どのように parse するか？）
+* implicit argument を何で埋めるか
+* どこにどの coercion を適用するか
+などがある。
+
+結論からいうと Lean の elaboration algorithm は
+o powerful
+x subtle
+x complex
+x not complete
+x potentially nonterminating
+o performs  quite well in ordinary situations
+らしい。
+
+* elaborator が省略した情報をどれくらい確実に推論できるか
+* error message にどのように対応すべきか
+を知るためにこのあたりの理解が必要？
+（この節だけ読んでもいまいち分かりませんでしたが。。。）
+
+以下、Lean の elaboration プロセスを順を追って説明する。
+
+1. implicit argument のための "hole" を挿入する。
+
+先程の節でみたように、
+t : Π {a : A}, T a
+のとき、t は @t _ に置き換えられる。
+
+2. instantiate metavariables
+
+入力された _ や上のステップで付け加えられた _ に
+メタ変数 ?M1, ?M2, ... を割り当てる。
+（error message でたまに出る ?M1 みたいなのはここで付与されたもの）
+
+3. overload された（複数の意味を持つ）notation e.g.
+   -/
+   namespace elaboration0
+   open sum
+   print notation +
+   -- print result:
+   -- _ `+`:65 _:65 :=
+   --   | add #1 #0
+   --   | sum #1 #0
+   end elaboration0
+   /-
+   についてありうる解釈を列挙する。
+   （notation の parse の問題もここで？）
+
+4. coercion が必要となるかもしれない関数適用 s t に
+   ついて、適用されうる coercion を列挙する。
+
+   * t の型が s の引数の型になるように t に coercion を適用する
+   * s が t に適用できる関数になるように coercion を適用する
+   * 適用必要がない ↔ identity を coercion として適用する
+
+5. 型制約条件を列挙し、制約問題を解く。
+
+   型制約条件は次の二種類
+
+   * 関数適用 t1 t2 が行われていて、
+     t1 : T1 かつ t2 : T2 （T1, T2 はメタ変数を含みうる）のとき
+     T1 は T2 を引数にとる関数型でなければならない。i.e.
+     T1 = Π x : T2, T3 x
+
+   * definition foo : T := t
+     のように宣言されている場合、
+     t : T でなければならない。
+
+   すべての関数適用と（あれば）全体の型から
+   制約条件を列挙する。
+
+   式 t1, t2, ... であって、
+   メタ変数 ?M1, ?M2, ... に代入することで
+   全ての制約条件をみたすものを見つける
+   (unification problem)
+
+   典型的な問題 (first-order) は簡単に解ける。
+   制約条件
+   f t_1 ... t_m = g s_1 ... s_m
+   を考える。
+
+   * f = g のときは、より小さいいくつかの制約条件
+     t_1 = s_1, ..., t_m = s_m
+     を解けばいい。
+
+   * f ≠ g のときは解なし
+
+   最終的に ?M = t の形になれば、そのメタ変数については解けたことになる。
+
+   しかし higher-order unification problem は大変
+
+   例） ?M a b = f (g a) b b の解は？
+        * ?M = λ x y, f (g x) y y
+        * ?M = λ x y, f (g x) y b
+        * ?M = λ x y, f (g a) b y
+        ...
+
+   このような推論の問題は容易に発生しうる。
+   -/
+   check @sigma.mk
+   check @nat.rec
+   check @eq.subst
+   /-
+   上の関数は関数を implicit argument に持つ。
+
+   このような問題を Lean は backtracking search で解く。
+   second-order でも undecidable であることが知られているらしい。
+   Lean の algorithm は
+   x not complete (解がある場合でも失敗しうる）
+   x potentailly nonterminating
+   o performs quite well in ordinary situations
+
+   さらに困ったことに、
+   制約問題を解くために "計算" が必要になる場合がある。
+   e.g. f M1? M2? = (λ x, f x x) M3?
+        （β簡約を行わないと解けない）
+   必要な計算の量はいくらでも大きくなりうる。
+   ので、全ての簡約を試すのは現実的でない。
+   ので、Lean は higher-order な制約を解くために
+   簡約計算を行うことを避ける。
+   これをさせない（Lean に簡約させる）ために、
+   reducible attribute が使えるらしいが、
+   これは Section 8.4 で説明する。
+
+   Lean は制約条件を簡単なものから解いていくらしい。
+   （確かにその方が効率が良さそう）
+
+6. global backtracking search
+
+   overload された notation や coercion についても選択の余地があるので、
+   これらについても backtracking search を行う。
+
+   まず、最初の候補（どれが最初？）で 5. を試し、
+   失敗したら、その結果を解析し、
+   次に試す選択肢を決める。
+
+etc.
+
+  他にも制約問題を解くための "わざ" があるらしい。
+  tactic とか（あまり説明はない）
+  あと class iference とか（これは次の章）
+  このあたりはあまり理解できていません。
+  (The elaborator relies on ... の段落)
+
+まとめ.
+
+  backtracking search で何から試すか、
+  どの順番で試すかはこの tutorial では明らかにされてない。
+  多分、実装依存というかこれから仕様変わる可能性がある。
+  また、明示的に書かれていないが、探索の中でひとつ解が見つかれば、
+  他の解の探索はしないようである。
+  よって、Lean に複数の解釈の可能性を与える場合は
+  型注釈をつける方が賢明
+
 -/
 
 end chapter8
