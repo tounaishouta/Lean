@@ -74,7 +74,7 @@ definition Functor.comp {C D E : Category} (G : Functor D E) (F : Functor C D) :
            = G (F g) ∘ G (F f) : Functor.resp_comp G,
     resp_id := take a,
       calc G (F 1)
-           = G 1   : Functor.resp_id F ... 
+           = G 1   : Functor.resp_id F ...
            = 1     : Functor.resp_id G ⦄
 
 definition Functor.id (C : Category) : Functor C C :=
@@ -87,15 +87,15 @@ definition Functor.id (C : Category) : Functor C C :=
 definition Functor.comp_assoc {C1 C2 C3 C4 : Category}
   {F3 : Functor C3 C4} {F2 : Functor C2 C3} {F1 : Functor C1 C2} :
   Functor.comp (Functor.comp F3 F2) F1 = Functor.comp F3 (Functor.comp F2 F1) :=
-  sorry
+  by esimp
 
 definition Functor.comp_id {C D : Category} {F : Functor C D} :
   Functor.comp F (Functor.id C) = F :=
-  sorry
+  by cases F ; esimp
 
 definition Functor.id_comp {C D : Category} {F : Functor C D} :
   Functor.comp (Functor.id D) F = F :=
-  sorry
+  by cases F ; esimp
 
 definition Cat : Category :=
   ⦃ Category,
@@ -140,15 +140,31 @@ definition NatTrans.id {C D : Category} (F : Functor C D) : NatTrans F F :=
 definition NatTrans.comp_assoc {C D : Category} {F G H K : Functor C D}
   {ζ : NatTrans H K} {η : NatTrans G H} {ξ : NatTrans F G} :
   NatTrans.comp (NatTrans.comp ζ η) ξ = NatTrans.comp ζ (NatTrans.comp η ξ) :=
-  sorry
+  begin
+    unfold NatTrans.comp,
+    congruence,
+    { exact sorry }
+  end
 
 definition NatTrans.comp_id {C D : Category} {F G : Functor C D} {ξ : NatTrans F G} :
   NatTrans.comp ξ (NatTrans.id F) = ξ :=
-  sorry
+  begin
+    cases ξ,
+    unfold NatTrans.comp,
+    unfold NatTrans.id,
+    congruence,
+    { exact sorry }
+  end
 
 definition NatTrans.id_comp {C D : Category} {F G : Functor C D} {ξ : NatTrans F G} :
   NatTrans.comp (NatTrans.id G) ξ = ξ :=
-  sorry
+  begin
+    cases ξ,
+    unfold NatTrans.comp,
+    unfold NatTrans.id,
+    congruence,
+    { exact sorry }
+  end
 
 definition FuncCat (C D : Category) : Category :=
   ⦃ Category,
