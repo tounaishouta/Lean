@@ -826,3 +826,37 @@ theorem node_inj_right {l r l' r' : tree A} : node l r = node l' r' → r = r' :
   and.right ∘ node_inj
 
 end sec_6_8
+
+namespace induction_on_vector
+
+open nat (zero succ)
+
+inductive vector (A : Type) : nat → Type :=
+| nil {} : vector A zero
+| cons   : Π {n : nat}, A → vector A n → vector A (succ n)
+
+open vector (nil cons)
+
+definition uncons {A : Type} : Π {n : nat}, vector A (succ n) → A × vector A n :=
+  have uncons' : Π (m : nat), vector A m → Π n : nat, m = succ n → A × vector A n,
+    from take m xxs,
+         vector.cases_on xxs
+           (take n' H, nat.no_confusion H)
+           (take n' x xs n H, pair x (eq.rec xs (nat.succ.inj H))),
+  take n xxs, uncons' (succ n) xxs n rfl
+
+open function prod
+
+definition head {A : Type} {n : nat} : vector A (succ n) → A := pr1 ∘ uncons
+
+definition tail {A : Type} {n : nat} : vector A (succ n) → vector A n := pr2 ∘ uncons
+
+definition map {A B : Type} (f : A → B) : Π {n : nat}, vector A n → vector B n :=
+  nat.rec (take xs, nil) (take n map_f_n xs, cons (f (head xs)) (map_f_n (tail xs)))
+
+definition zipWith {A B C : Type} (f : A → B → C) : Π {n : nat}, vector A n → vector B n → vector C n :=
+  nat.rec (take xs ys, nil) (take n zipWith_f_n xs ys, cons (f (head xs) (head ys)) (zipWith_f_n (tail xs) (tail ys)))
+
+definition zip {A B : Type} {n : nat} : vector A n → vector B n → vector (A × B) n := zipWith pair
+
+end induction_on_vector
