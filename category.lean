@@ -143,27 +143,31 @@ definition NatTrans.comp_assoc {C D : Category} {F G H K : Functor C D}
   begin
     unfold NatTrans.comp,
     congruence,
-    { exact sorry }
+    apply funext,
+    intro a,
+    exact Category.comp_assoc D
   end
 
 definition NatTrans.comp_id {C D : Category} {F G : Functor C D} {ξ : NatTrans F G} :
   NatTrans.comp ξ (NatTrans.id F) = ξ :=
   begin
     cases ξ,
-    unfold NatTrans.comp,
-    unfold NatTrans.id,
+    unfold [NatTrans.comp, NatTrans.id],
     congruence,
-    { exact sorry }
+    apply funext,
+    intro a,
+    exact Category.comp_id D
   end
 
 definition NatTrans.id_comp {C D : Category} {F G : Functor C D} {ξ : NatTrans F G} :
   NatTrans.comp (NatTrans.id G) ξ = ξ :=
   begin
     cases ξ,
-    unfold NatTrans.comp,
-    unfold NatTrans.id,
+    unfold [NatTrans.comp, NatTrans.id],
     congruence,
-    { exact sorry }
+    apply funext,
+    intro a,
+    exact Category.id_comp D
   end
 
 definition FuncCat (C D : Category) : Category :=
@@ -175,5 +179,102 @@ definition FuncCat (C D : Category) : Category :=
     comp_assoc := @NatTrans.comp_assoc C D,
     comp_id := @NatTrans.comp_id C D,
     id_comp := @NatTrans.id_comp C D ⦄
+
+definition Presheaf (C : Category) : Category := FuncCat (op C) Type_as_Cat
+
+definition FuncTo {C : Category} (x : C) : Functor (op C) Type_as_Cat :=
+  ⦃ Functor (op C) Type_as_Cat,
+    Ob := λ a : C, Category.Hom C a x,
+    Hom := λ (a b : C) (f : Category.Hom C b a) (g : Category.Hom C a x), g ∘ f,
+    resp_comp :=
+      begin
+        unfold [op, Type_as_Cat] at *,
+        intro a b c g f,
+        apply funext,
+        intro h,
+        rewrite Category.comp_assoc
+      end,
+    resp_id :=
+      begin
+        unfold [op, Type_as_Cat] at *,
+        intro a,
+        apply funext,
+        intro f,
+        rewrite Category.comp_id
+      end ⦄
+
+definition NatTransTo {C : Category} {x y : C} (g : x ⇒ y) :
+  NatTrans (FuncTo x) (FuncTo y) :=
+  ⦃ NatTrans (FuncTo x) (FuncTo y),
+    trans := λ (a : C) (f : Category.Hom C a x), Category.comp C g f,
+    comm :=
+      begin
+        intro a b f,
+        apply funext,
+        unfold [op, FuncTo, Type_as_Cat] at *,
+        intro h,
+        rewrite Category.comp_assoc
+      end ⦄
+
+definition Yoneda (C : Category) : Functor C (Presheaf C) :=
+  ⦃ Functor C (Presheaf C),
+    Ob := FuncTo,
+    Hom := @NatTransTo C,
+    resp_comp :=
+      begin
+        intro x y z g f,
+        unfold [NatTransTo, Presheaf, FuncCat, NatTrans.comp],
+        congruence,
+        apply funext,
+        intro a,
+        apply funext,
+        intro h,
+        rewrite Category.comp_assoc
+      end,
+    resp_id :=
+      begin
+        intro x,
+        unfold [NatTransTo, Presheaf, FuncCat, NatTrans.id],
+        congruence,
+        apply funext,
+        intro a,
+        apply funext,
+        intro f,
+        rewrite Category.id_comp
+      end ⦄
+
+definition bijective {A B : Type} (f : A → B) : Prop :=
+  ∃ g : B → A, (∀ a : A, g (f a) = a) ∧ (∀ b : B, f (g b) = b)
+
+definition fully_faithful {C D : Category} (F : Functor C D)  : Prop :=
+  ∀ a b : C, @bijective (a ⇒ b) (F a ⇒ F b) (Functor.Hom F)
+
+theorem YonedaLemma : ∀ C : Category, fully_faithful (Yoneda C) :=
+  begin
+    intro C,
+    unfold fully_faithful,
+    intro x y,
+    unfold [bijective, Yoneda],
+    fapply exists.intro,
+    { intro ξ,
+      exact ξ x 1 },
+    { split,
+      { intro f,
+        unfold NatTransTo,
+        rewrite Category.comp_id },
+      { intro ξ,
+        cases ξ,
+        unfold [NatTransTo, op] at *,
+        congruence,
+        apply funext,
+        intro a,
+        apply funext,
+        intro f,
+        calc trans x 1 ∘ f
+             = (FuncTo y f ∘ trans x) 1 : rfl ...
+             = (trans a ∘ FuncTo x f) 1 : by rewrite comm ...
+             = trans a (1 ∘ f)          : rfl ...
+             = trans a f                : by rewrite Category.id_comp }}
+  end
 
 end category
